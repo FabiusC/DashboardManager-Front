@@ -1,0 +1,11 @@
+.next
+node_modules
+package-lock.json
+next.config.js
+.git/
+paths.js
+start_services.sh
+.env
+/dashboards/.env.local
+.env.local
+.vscode/

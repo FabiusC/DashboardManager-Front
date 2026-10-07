@@ -1,0 +1,46 @@
+.markerCluster {
+  background-clip: padding-box;
+  border-radius: 14px;
+}
+
+.bubble {
+  width: 22px;
+  height: 22px;
+  margin-left: 4px;
+  margin-top: 4px;
+  text-align: center;
+  border-radius: 11px;
+  font: 9px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+  background-color: rgba(181, 226, 140, 0.6);
+}
+
+.bubble span {
+  line-height: 22px;
+  color: #333;
+}
+
+.medium .bubble {
+  width: 29px;
+  height: 29px;
+  margin-left: 0;
+  margin-top: 0;
+  border-radius: 14px;
+  background-color: rgba(241, 211, 87, 0.6);
+}
+
+.medium .bubble span {
+  line-height: 29px;
+}
+
+.large .bubble {
+  width: 36px;
+  height: 36px;
+  margin-left: -4px;
+  margin-top: -4px;
+  border-radius: 18px;
+  background-color: rgba(253, 156, 115, 0.6);
+}
+
+.large .bubble span {
+  line-height: 36px;
+}

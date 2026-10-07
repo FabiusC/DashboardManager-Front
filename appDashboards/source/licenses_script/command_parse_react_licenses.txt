@@ -1,0 +1,130 @@
+#!/bin/bash
+
+# Define the input and output file paths
+input_file="licenses_file.json"
+output_file="transformed_licenses.json"
+
+# Start the JSON array in the output file
+echo "[" > "$output_file"
+
+# Read each package entry from the input JSON file
+jq -c '.[]' "$input_file" | while read -r package; do
+  # Extract necessary fields from the current package entry
+  licensePath=$(echo "$package" | jq -r '.licenseFile')
+  packageName=$(echo "$package" | jq -r '.path' | awk -F'/' '{print $(NF-1)}' | cut -d '@' -f 2)
+  version=$(echo "$package" | jq -r '.path' | awk -F'/' '{print $(NF-1)}' | rev | cut -d '@' -f 1 | rev)
+  
+  # Read the license text from the file specified in the licensePath
+  if [ -f "$licensePath" ]; then
+    licenseText=$(cat "$licensePath" | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
+  else
+    licenseText="License file not found."
+  fi
+  
+  # Construct the new JSON object with the required structure
+  new_object=$(jq -n \
+                  --arg lt "$licenseText" \
+                  --arg pn "$packageName" \
+                  --arg ver "$version" \
+                  '{License: "BSD License", LicenseText: $lt, Name: $pn, Version: $ver}')
+  
+  # Append the new JSON object to the output file
+  echo "$new_object," >> "$output_file"
+done
+
+# Remove the last comma to maintain valid JSON format and close the JSON array
+sed -i '$ s/,$/\n]/' "$output_file"
+
+
+
+# version sin la parte inicial del path
+
+#!/bin/bash
+
+# Define the input and output file paths
+input_file="licenses_file.json"
+output_file="transformed_licenses.json"
+
+# Start the JSON array in the output file
+echo "[" > "$output_file"
+
+# Read each package entry from the input JSON file
+jq -c '.[]' "$input_file" | while read -r package; do
+  # Extract necessary fields from the current package entry
+  licensePath=$(echo "$package" | jq -r '.licenseFile')
+  packageName=$(echo "$package" | jq -r '.path' | awk -F'/' '{print $(NF-1)}' | cut -d '@' -f 2)
+  version=$(echo "$package" | jq -r '.path' | awk -F'/' '{print $(NF-1)}' | rev | cut -d '@' -f 1 | rev)
+  
+  # Validate the licensePath to ensure it starts with /app/appDataCatalog/
+  if [[ "$licensePath" != /app/appDataCatalog/* ]]; then
+    echo "License path $licensePath is not valid."
+    continue # Skip to the next package
+  fi
+
+  # Read the license text from the file specified in the licensePath
+  if [ -f "$licensePath" ]; then
+    licenseText=$(cat "$licensePath" | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
+  else
+    licenseText="License file not found."
+  fi
+  
+  # Construct the new JSON object with the required structure
+  new_object=$(jq -n \
+                  --arg lt "$licenseText" \
+                  --arg pn "$packageName" \
+                  --arg ver "$version" \
+                  '{License: "BSD License", LicenseText: $lt, Name: $pn, Version: $ver}')
+  
+  # Append the new JSON object to the output file
+  echo "$new_object," >> "$output_file"
+done
+
+# Remove the last comma to maintain valid JSON format and close the JSON array
+sed -i '$ s/,$/\n]/' "$output_file"
+
+
+
+import json
+import os
+
+# Define los nombres de los archivos de entrada y salida
+input_file = 'licenses_file.json'
+output_file = 'transformed_licenses.json'
+
+# Lee el archivo JSON de entrada
+with open(input_file, 'r') as file:
+    data = json.load(file)
+
+# Lista para almacenar los objetos JSON transformados
+transformed_data = []
+
+# Itera sobre cada entrada en el JSON de entrada
+for key, value in data.items():
+    license_path = value['licenseFile']
+    # Verifica si el licenseFile comienza con /app/appDataCatalog/
+    if license_path.startswith('/app/appDataCatalog/'):
+        # Intenta leer el contenido del archivo de licencia
+        try:
+            with open(license_path, 'r') as license_file:
+                license_text = license_file.read()
+        except FileNotFoundError:
+            license_text = "License file not found."
+        
+        # Extrae el nombre del paquete y la versión
+        package_name = key.split('@')[-2]
+        version = key.split('@')[-1]
+        
+        # Construye el nuevo objeto JSON
+        new_object = {
+            "License": "BSD License",
+            "LicenseText": license_text.replace('\n', '\\n'),
+            "Name": package_name,
+            "Version": version
+        }
+        
+        # Añade el nuevo objeto a la lista
+        transformed_data.append(new_object)
+
+# Escribe los objetos JSON transformados en el nuevo archivo JSON
+with open(output_file, 'w') as file:
+    json.dump(transformed_data, file, indent=4)

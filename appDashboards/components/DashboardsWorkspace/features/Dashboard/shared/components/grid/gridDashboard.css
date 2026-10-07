@@ -1,0 +1,281 @@
+.grid-stack.dashboard-grid-root {
+    min-height: 100vh;
+    --resize-handle-size: 12px;
+    --resize-handle-thickness: 2px;
+    --resize-handle-color: color-mix(
+        in srgb,
+        var(--ifinditUi-primaryColor) 70%,
+        transparent
+    );
+    --resize-handle-color-hover: var(--ifinditUi-primaryColor);
+    --grid-push-duration: 180ms;
+    --grid-push-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.grid-stack.grid-stack-animate
+    > .grid-stack-item:not(.ui-draggable-dragging):not(.ui-resizable-resizing) {
+    transition:
+        left var(--grid-push-duration) var(--grid-push-ease),
+        top var(--grid-push-duration) var(--grid-push-ease),
+        width var(--grid-push-duration) var(--grid-push-ease),
+        height var(--grid-push-duration) var(--grid-push-ease);
+}
+
+/* The widget under the pointer should never animate. */
+.grid-stack-item.ui-draggable-dragging,
+.grid-stack-item.ui-resizable-resizing {
+    transition: none !important;
+    z-index: 100;
+}
+
+/* Subtle lift while dragging. */
+.grid-stack-item.ui-draggable-dragging > .grid-stack-item-content {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    opacity: 0.95;
+    cursor: grabbing;
+}
+
+/* Drop placeholder*/
+.grid-stack > .grid-stack-placeholder > .placeholder-content {
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--ifinditUi-primaryColor) 6%, transparent);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Resize handles — L-brackets (same language as drag-ghost corners)           */
+/* Tunables: --resize-handle-* on .dashboard-grid-root                         */
+/* -------------------------------------------------------------------------- */
+
+/* Hit areas: corners visible as L; edges stay invisible but usable. */
+.dashboard-grid-root > .grid-stack-item > .ui-resizable-handle {
+    z-index: 20;
+    opacity: 0;
+    background-image: none !important;
+    background-color: transparent;
+    transform: none !important;
+    box-sizing: border-box;
+    transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+
+.dashboard-grid-root > .grid-stack-item:hover > .ui-resizable-handle,
+.dashboard-grid-root > .grid-stack-item.ui-resizable-resizing > .ui-resizable-handle {
+    opacity: 1;
+}
+
+/* Edge handles: larger hit target, no chrome */
+.dashboard-grid-root > .grid-stack-item > .ui-resizable-n,
+.dashboard-grid-root > .grid-stack-item > .ui-resizable-e,
+.dashboard-grid-root > .grid-stack-item > .ui-resizable-s,
+.dashboard-grid-root > .grid-stack-item > .ui-resizable-w {
+    border: none;
+    opacity: 0 !important;
+}
+
+/* Corner L-brackets */
+.dashboard-grid-root > .grid-stack-item > .ui-resizable-nw,
+.dashboard-grid-root > .grid-stack-item > .ui-resizable-ne,
+.dashboard-grid-root > .grid-stack-item > .ui-resizable-sw,
+.dashboard-grid-root > .grid-stack-item > .ui-resizable-se {
+    width: var(--resize-handle-size);
+    height: var(--resize-handle-size);
+    border-style: solid;
+    border-color: var(--resize-handle-color);
+    border-width: 0;
+}
+
+.dashboard-grid-root > .grid-stack-item:hover > .ui-resizable-nw,
+.dashboard-grid-root > .grid-stack-item:hover > .ui-resizable-ne,
+.dashboard-grid-root > .grid-stack-item:hover > .ui-resizable-sw,
+.dashboard-grid-root > .grid-stack-item:hover > .ui-resizable-se,
+.dashboard-grid-root > .grid-stack-item.ui-resizable-resizing > .ui-resizable-nw,
+.dashboard-grid-root > .grid-stack-item.ui-resizable-resizing > .ui-resizable-ne,
+.dashboard-grid-root > .grid-stack-item.ui-resizable-resizing > .ui-resizable-sw,
+.dashboard-grid-root > .grid-stack-item.ui-resizable-resizing > .ui-resizable-se {
+    border-color: var(--resize-handle-color-hover);
+}
+
+.dashboard-grid-root > .grid-stack-item > .ui-resizable-nw {
+    border-top-width: var(--resize-handle-thickness);
+    border-left-width: var(--resize-handle-thickness);
+}
+.dashboard-grid-root > .grid-stack-item > .ui-resizable-ne {
+    border-top-width: var(--resize-handle-thickness);
+    border-right-width: var(--resize-handle-thickness);
+}
+.dashboard-grid-root > .grid-stack-item > .ui-resizable-sw {
+    border-bottom-width: var(--resize-handle-thickness);
+    border-left-width: var(--resize-handle-thickness);
+}
+.dashboard-grid-root > .grid-stack-item > .ui-resizable-se {
+    border-bottom-width: var(--resize-handle-thickness);
+    border-right-width: var(--resize-handle-thickness);
+}
+
+/* Drag-ghost (active when .dashboard-grid-root--drag-ghost is on the grid)  */
+.dashboard-grid-root--drag-ghost {
+    --drag-ghost-body: 8%;
+    --drag-ghost-border: 55%;
+    --drag-ghost-aura: 22%;
+    --drag-ghost-corner: 70%;
+    --drag-ghost-chip-bg: 18%;
+    --drag-ghost-chip-fg: 92%;
+    --drag-ghost-dot-idle: 5%;
+    --drag-ghost-dot-active: 18%;
+    --drag-ghost-corner-len: 10px;
+    --drag-ghost-corner-thickness: 2px;
+
+    background-image: radial-gradient(
+        circle,
+        color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-dot-idle), transparent) 1px,
+        transparent 1.5px
+    );
+    background-size: var(--gs-column-width) var(--gs-cell-height);
+    background-position: 0 0;
+}
+
+.dashboard-grid-root--drag-ghost.dashboard-grid-root--dragging {
+    background-image: radial-gradient(
+        circle,
+        color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-dot-active), transparent) 1px,
+        transparent 1.5px
+    );
+}
+
+.dashboard-grid-root--dragging.grid-stack-animate
+    > .grid-stack-item.grid-stack-placeholder {
+    transition: none !important;
+}
+
+.dashboard-grid-root--dragging
+    > .grid-stack-item:not(.ui-draggable-dragging):not(.ui-resizable-resizing)
+    > .grid-stack-item-content {
+    pointer-events: none;
+    contain: layout;
+}
+.dashboard-grid-root--drag-ghost
+    > .grid-stack-item.ui-draggable-dragging,
+.dashboard-grid-root--drag-ghost
+    > .grid-stack-item.ui-resizable-resizing {
+    isolation: isolate;
+    border-radius: 6px;
+    box-shadow: 0 0 28px 4px
+        color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-aura), transparent);
+    background:
+        linear-gradient(
+            color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-corner), transparent),
+            color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-corner), transparent)
+        )
+            top left / var(--drag-ghost-corner-len) var(--drag-ghost-corner-thickness) no-repeat,
+        linear-gradient(
+            color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-corner), transparent),
+            color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-corner), transparent)
+        )
+            top left / var(--drag-ghost-corner-thickness) var(--drag-ghost-corner-len) no-repeat,
+        linear-gradient(
+            color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-corner), transparent),
+            color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-corner), transparent)
+        )
+            top right / var(--drag-ghost-corner-len) var(--drag-ghost-corner-thickness) no-repeat,
+        linear-gradient(
+            color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-corner), transparent),
+            color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-corner), transparent)
+        )
+            top right / var(--drag-ghost-corner-thickness) var(--drag-ghost-corner-len) no-repeat,
+        linear-gradient(
+            color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-corner), transparent),
+            color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-corner), transparent)
+        )
+            bottom left / var(--drag-ghost-corner-len) var(--drag-ghost-corner-thickness) no-repeat,
+        linear-gradient(
+            color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-corner), transparent),
+            color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-corner), transparent)
+        )
+            bottom left / var(--drag-ghost-corner-thickness) var(--drag-ghost-corner-len) no-repeat,
+        linear-gradient(
+            color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-corner), transparent),
+            color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-corner), transparent)
+        )
+            bottom right / var(--drag-ghost-corner-len) var(--drag-ghost-corner-thickness) no-repeat,
+        linear-gradient(
+            color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-corner), transparent),
+            color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-corner), transparent)
+        )
+            bottom right / var(--drag-ghost-corner-thickness) var(--drag-ghost-corner-len) no-repeat,
+        color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-body), transparent);
+    border: 1.5px dashed
+        color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-border), transparent);
+    box-sizing: border-box;
+    cursor: grabbing;
+    overflow: hidden;
+}
+.dashboard-grid-root--drag-ghost
+    > .grid-stack-item.ui-draggable-dragging
+    > .grid-stack-item-content,
+.dashboard-grid-root--drag-ghost
+    > .grid-stack-item.ui-resizable-resizing
+    > .grid-stack-item-content {
+    position: relative;
+    inset: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    opacity: 1 !important;
+}
+
+.dashboard-grid-root--drag-ghost
+    > .grid-stack-item.ui-draggable-dragging
+    > .grid-stack-item-content
+    > :not(.dashboard-drag-ghost-chip),
+.dashboard-grid-root--drag-ghost
+    > .grid-stack-item.ui-resizable-resizing
+    > .grid-stack-item-content
+    > :not(.dashboard-drag-ghost-chip) {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Hide snap placeholder — only the pointer-following ghost should show. */
+.dashboard-grid-root--dragging > .grid-stack-placeholder {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* Hide L-handles while resizing; ghost corners replace them visually. */
+.dashboard-grid-root--drag-ghost
+    > .grid-stack-item.ui-resizable-resizing
+    > .ui-resizable-handle {
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+.dashboard-grid-root--drag-ghost .dashboard-drag-ghost-chip {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    pointer-events: none;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1.4;
+    white-space: nowrap;
+    color: color-mix(
+        in srgb,
+        var(--ifinditUi-primaryColor) var(--drag-ghost-chip-fg),
+        var(--ifinditUi-textColorDark, #292929)
+    );
+    background: color-mix(
+        in srgb,
+        var(--ifinditUi-surfaceColor, #fff) 72%,
+        color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-chip-bg), transparent)
+    );
+    border: 1px solid
+        color-mix(in srgb, var(--ifinditUi-primaryColor) var(--drag-ghost-border), transparent);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--ifinditUi-primaryColor) 12%, transparent);
+}
