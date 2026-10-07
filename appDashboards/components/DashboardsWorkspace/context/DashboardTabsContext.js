@@ -2,6 +2,8 @@ import createDataContext from '../utils/createDataContext';
 
 const initialState = {
   tabsSideMenu: [],
+  dashboardTabs: [],
+  selectedDashboardId: null,
 };
 
 const dashboardTabsReducer = (state, action) => {
@@ -13,9 +15,9 @@ const dashboardTabsReducer = (state, action) => {
         tabsSideMenu: state.tabsSideMenu.map(tab =>
           tab.name === name
             ? {
-                ...tab,
-                state: { ...tab.state, [key]: value },
-              }
+              ...tab,
+              state: { ...tab.state, [key]: value },
+            }
             : tab
         ),
       };
@@ -26,6 +28,18 @@ const dashboardTabsReducer = (state, action) => {
         tabsSideMenu: action.payload.tabsSideMenu ?? [],
       };
 
+    case 'SET_DASHBOARD_TABS':
+      return {
+        ...state,
+        dashboardTabs: action.payload.dashboardTabs ?? [],
+      };
+
+    case 'SELECT_DASHBOARD':
+      return {
+        ...state,
+        selectedDashboardId: action.payload.dashboardId ?? null,
+      };
+
     default:
       return state;
   }
@@ -33,22 +47,38 @@ const dashboardTabsReducer = (state, action) => {
 
 const changeSideTabState =
   dispatch =>
-  (name, key, value) =>
-    dispatch({ type: 'SET_SIDE_TAB_STATE', payload: { name, key, value } });
+    (name, key, value) =>
+      dispatch({ type: 'SET_SIDE_TAB_STATE', payload: { name, key, value } });
 
 const initTabs =
   dispatch =>
-  (tabsSideMenu) =>
-    dispatch({
-      type: 'INIT_TABS',
-      payload: { tabsSideMenu },
-    });
+    (tabsSideMenu) =>
+      dispatch({
+        type: 'INIT_TABS',
+        payload: { tabsSideMenu },
+      });
+
+const setDashboardTabs =
+  dispatch =>
+    (dashboardTabs) =>
+      dispatch({
+        type: 'SET_DASHBOARD_TABS',
+        payload: { dashboardTabs },
+      });
+
+const selectDashboard =
+  dispatch =>
+    (dashboardId) =>
+      dispatch({
+        type: 'SELECT_DASHBOARD',
+        payload: { dashboardId },
+      });
 
 export const {
   Context: DashboardTabsContext,
   Provider: DashboardTabsProvider,
 } = createDataContext(
   dashboardTabsReducer,
-  { initTabs, changeSideTabState },
+  { initTabs, changeSideTabState, setDashboardTabs, selectDashboard },
   initialState
 ); 

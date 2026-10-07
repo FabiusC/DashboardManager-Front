@@ -39,15 +39,11 @@ export function useGridStackDashboard({
 
     // Always-fresh mirrors so GridStack listeners never read stale closures.
     const layoutRef = useRef(layout);
-    const configurationRef = useRef(configuration);
+    const panelsRef = useRef(panels);
     layoutRef.current = layout;
-    configurationRef.current = configuration;
+    panelsRef.current = panels;
     const liveRef = useRef();
-    liveRef.current = {
-        onLayoutChange,
-        onDropPanel,
-        isReadOnly,
-        desktopColumns: resolveColumns(configuration),
+    liveRef.current = { onLayoutChange, onDropPanel, isReadOnly, desktopColumns: resolveColumns(configuration),
     };
 
     const [widgetHosts, setWidgetHosts] = useState({});
@@ -75,6 +71,9 @@ export function useGridStackDashboard({
         gridRef.current = grid;
         DDManager.pauseDrag = false;
         const detachDragGhost = isReadOnly ? () => {} : attachDragGhostEffect(grid);
+        const refreshFrame = requestAnimationFrame(() => {
+            if (gridRef.current === grid) grid.onResize();
+        });
 
         // User moved or resized a widget → report the new layout upstream.
         grid.on("change", (_event, nodes) => {
@@ -99,6 +98,7 @@ export function useGridStackDashboard({
         });
 
         return () => {
+            cancelAnimationFrame(refreshFrame);
             detachDragGhost();
             grid.offAll();
             grid.destroy(false);
@@ -113,14 +113,9 @@ export function useGridStackDashboard({
         const grid = gridRef.current;
         if (!grid) return;
         isApplyingRef.current = true;
-        try {
-            applyGridMargin(grid, configuration);
-            if (nodesRef.current.size > 0) {
-                applyGridColumns(grid, configuration);
-            }
-        } finally {
-            isApplyingRef.current = false;
-        }
+        applyGridMargin(grid, configuration);
+        applyGridColumns(grid, configuration);
+        isApplyingRef.current = false;
     }, [configuration]);
 
     // --- Read-only toggle ----------------------------------------------------
@@ -139,89 +134,39 @@ export function useGridStackDashboard({
         const desiredById = new Map(desired.map((w) => [String(w.id), w]));
         const nodes = nodesRef.current;
         isApplyingRef.current = true;
-        try {
-            if (desired.length > 0 && nodes.size === 0) {
-                const desktopColumns = resolveColumns(configurationRef.current);
-                if (grid.getColumn() !== desktopColumns) {
-                    grid.column(desktopColumns, "moveScale");
-                }
+        grid.batchUpdate();
+
+        // Remove widgets
+        for (const [id, entry] of nodes) {
+            if (!desiredById.has(String(id))) {
+                grid.removeWidget(entry.el, true, false);
+                nodes.delete(id);
             }
-
-            grid.batchUpdate();
-
-            // Remove widgets
-            for (const [id, entry] of nodes) {
-                if (!desiredById.has(String(id))) {
-                    grid.removeWidget(entry.el, true, false);
-                    nodes.delete(id);
-                }
-            }
-
-            // Add brand-new widgets, seeding their saved/dropped position.
-            for (const w of desired) {
-                if (nodes.has(w.id)) continue;
-                const el = grid.addWidget({
-                    id: w.id,
-                    x: w.x,
-                    y: w.y,
-                    w: w.w,
-                    h: w.h,
-                    minW: w.minW,
-                    minH: w.minH,
-                    noMove: w.noMove,
-                    noResize: w.noResize,
-                });
-                const host = el.querySelector(".grid-stack-item-content");
-                nodes.set(w.id, { el, host });
-            }
-
-            grid.batchUpdate(false);
-
-            // Reflow only after all saved widgets have been seeded at desktop
-            // columns; this gives GridStack a stable order to compact on mobile.
-            if (nodes.size > 0) {
-                applyGridColumns(grid, configurationRef.current);
-            }
-        } finally {
-            isApplyingRef.current = false;
         }
+
+        // Add brand-new widgets, seeding their saved/dropped position.
+        for (const w of desired) {
+            if (nodes.has(w.id)) continue;
+            const el = grid.addWidget({
+                id: w.id,
+                x: w.x,
+                y: w.y,
+                w: w.w,
+                h: w.h,
+                minW: w.minW,
+                minH: w.minH,
+                noMove: w.noMove,
+                noResize: w.noResize,
+            });
+            const host = el.querySelector(".grid-stack-item-content");
+            nodes.set(w.id, { el, host });
+        }
+
+        grid.batchUpdate(false);
+        isApplyingRef.current = false;
 
         publishHosts();
     }, [panels, isReadOnly]);
-    
-    useLayoutEffect(() => {
-        const grid = gridRef.current;
-        if (!grid || typeof window === "undefined") return undefined;
-
-        let frameId = null;
-        const applyResponsiveColumns = () => {
-            frameId = null;
-            if (nodesRef.current.size === 0) return;
-
-            isApplyingRef.current = true;
-            try {
-                applyGridColumns(grid, configurationRef.current);
-            } finally {
-                isApplyingRef.current = false;
-            }
-        };
-        const scheduleResponsiveColumns = () => {
-            if (frameId !== null) return;
-            frameId = requestAnimationFrame(applyResponsiveColumns);
-        };
-
-        applyResponsiveColumns();
-        window.addEventListener("resize", scheduleResponsiveColumns);
-        window.addEventListener("pageshow", scheduleResponsiveColumns);
-        window.visualViewport?.addEventListener("resize", scheduleResponsiveColumns);
-
-        return () => {
-            window.removeEventListener("resize", scheduleResponsiveColumns);
-            window.removeEventListener("pageshow", scheduleResponsiveColumns);
-            window.visualViewport?.removeEventListener("resize", scheduleResponsiveColumns);
-            if (frameId !== null) cancelAnimationFrame(frameId);
-        };
-    }, []);
 
     return { containerRef, widgetHosts };
 }

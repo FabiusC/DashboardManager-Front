@@ -2,9 +2,38 @@ import { dashboardGeneralRequest as generalRequest } from "@services/dashboardAP
 import { pushNotification } from "@redux/actions";
 import { handleGetPanels, normalizeLayout } from "../../shared/utils/dashboardActions";
 import { toApiPositions } from "../../shared/components/grid/gridLayoutMapper";
+import { handleUpdateDashboardCategories } from "../../shared/utils/dashboardActions";
 
 const DEFAULT_W = 3;
 const DEFAULT_H = 2;
+
+// Assign the categories of the target dashboard to the dragged dashboard on drop
+export const assignDashboardCategoriesOnDrop = async ({
+    draggedDashboardId,
+    targetDashboard,
+    userToken,
+    dispatch,
+    setDashboard,
+}) => {
+    const categories = Array.isArray(targetDashboard?.categories) ? targetDashboard.categories : [];
+    if (categories.length === 0) {
+        dispatch(pushNotification({ msg: "No se pueden asignar categorías: el tablero destino no tiene categorías.", status: "err" }));
+        return false;
+    }
+    if (!draggedDashboardId || String(draggedDashboardId) === String(targetDashboard?.id)) return false;
+
+    try {
+        const category_ids = categories.map((category) => category.id).filter(Boolean);
+        const category_names = categories.map((category) => category.name).filter(Boolean);
+        await handleUpdateDashboardCategories(draggedDashboardId, { category_ids, category_names }, userToken);
+        dispatch(pushNotification({ msg: "Categorías asignadas correctamente.", status: "ok" }));
+        setDashboard?.((previous) => previous);
+        return true;
+    } catch (error) {
+        dispatch(pushNotification({ msg: error?.message || "No se pudieron asignar las categorías.", status: "err" }));
+        return false;
+    }
+};
 
 const toLayoutItem = (panelId, position = {}) => ({
     id: String(panelId),

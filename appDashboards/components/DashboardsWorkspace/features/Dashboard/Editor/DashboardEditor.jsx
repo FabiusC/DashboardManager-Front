@@ -11,6 +11,7 @@ import { normalizePanelResponse, buildChartState } from "../shared/utils/normali
 import DashboardGrid from "../shared/components/DashboardGrid"
 import { useEditorLogic } from "./hooks/useEditorLogic"
 import useDashboardTabsContext from "../../../hooks/useDashboardTabsContext"
+import DashboardTabs from "../../DashboardTabs/components/DashboardTabs"
 
 export default function DashboardEditor({
   dashboard,
@@ -21,6 +22,7 @@ export default function DashboardEditor({
   setLayout,
   user,
   id,
+  currentDashboardId,
 }) {
   const [mounted, setMounted] = useState(false)
   const [isCreateModal, setIsCreateModal] = useState(false)
@@ -32,6 +34,7 @@ export default function DashboardEditor({
   const dispatch = useDispatch()
   const dashboardCaptureRef = useRef(null)
 
+  const { tabsSideMenu, initTabs, changeSideTabState, selectDashboard } = useDashboardTabsContext()
   const editorLogic = useEditorLogic({
     dashboard,
     panels,
@@ -43,9 +46,8 @@ export default function DashboardEditor({
     id,
     previewElementRef: dashboardCaptureRef,
     setPreviewCapturing: setIsPreviewCapturing,
+    selectDashboard,
   })
-
-  const { tabsSideMenu, initTabs, changeSideTabState } = useDashboardTabsContext()
 
   useEffect(() => {
     setMounted(true)
@@ -146,7 +148,13 @@ export default function DashboardEditor({
   return (
     <>
       <Box sx={{ display: "flex", flexDirection: "column", flexGrow: 1, height: "calc(100vh)", overflow: "hidden" }}>
-        <Box sx={{ display: "flex", flexDirection: "column", flexGrow: 1, height: "100%" }}>
+        <Box // Drop zone for dashboards
+          sx={{ display: "flex", flexDirection: "column", flexGrow: 1, height: "100%", pb: 7 }}
+          onDragOver={(event) => {
+            if (event.dataTransfer?.types?.includes("application/x-dashboard-id")) event.preventDefault()
+          }}
+          onDrop={editorLogic.onDropDashboard}
+        >
           <Paper variant="outlined" sx={{ display: "flex", flexDirection: "row", height: "100%", flexGrow: 1 }}>
             <SideMenu
               tabs={tabsForSideMenu}
@@ -189,6 +197,11 @@ export default function DashboardEditor({
           </Paper>
         </Box>
       </Box>
+      <DashboardTabs // Tab navigation for dashboards
+        dashboard={dashboard}
+        currentDashboardId={currentDashboardId || dashboard?.id}
+        mode="editor"
+      />
       {mounted && isPreviewCapturing && (dashboard?.id || id) && (
         <Box
           aria-hidden="true"
@@ -216,6 +229,7 @@ export default function DashboardEditor({
       )}
       <CreateDashboard
         open={isCreateModal}
+        originDashboard={dashboard}
         onClose={() => setIsCreateModal(false)}
         user={user[0]}
         onDashboardCreated={() => {
@@ -238,4 +252,3 @@ export default function DashboardEditor({
     </>
   )
 }
-

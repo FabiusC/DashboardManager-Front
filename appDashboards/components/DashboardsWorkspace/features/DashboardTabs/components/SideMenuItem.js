@@ -22,10 +22,11 @@ const SideMenuItem = ({ tab, handleClick, activeCount, baseTabWidth, expandedWid
   const theme = useTheme();
   const isActive = tab?.state?.isActive;
   const isDisabled = tab?.state?.isDisabled;
+  const itemExpandedWidth = tab?.expandedWidth ?? expandedWidth;
 
   return (
     <Box
-      sx={getItemContainerStyles(isActive, activeCount, baseTabWidth, expandedWidth)}
+      sx={getItemContainerStyles(isActive, activeCount, baseTabWidth, itemExpandedWidth)}
     >
       <Tooltip title={!isActive ? tab.description : ""} placement="right" arrow>
         <Box
@@ -72,4 +73,3 @@ const SideMenuItem = ({ tab, handleClick, activeCount, baseTabWidth, expandedWid
 };
 
 export default SideMenuItem;
-

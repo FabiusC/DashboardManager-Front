@@ -1,4 +1,5 @@
-import { Box, Typography } from "@mui/material";
+import { ArrowBack, FolderRounded } from "@mui/icons-material";
+import { Box, Button, Typography } from "@mui/material";
 import { DASHBOARD_INDEX_GRID_COLUMNS } from "../services/dashboardIndexService";
 import DashboardIndexCarousel from "./DashboardIndexCarousel";
 import DashboardIndexItem from "./DashboardIndexItem";
@@ -118,8 +119,11 @@ const CategoryBlock = ({
 
 const DashboardIndexGroupedList = ({
   categories,
+  selectedCategory,
   currentDashboardId,
   onSelectDashboard,
+  onSelectCategory,
+  onBackToCategories,
   onDashboardPageChange,
 }) => {
   if (!categories.length) {
@@ -130,10 +134,59 @@ const DashboardIndexGroupedList = ({
     );
   }
 
+  if (!selectedCategory) {
+    return (
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }, gap: 1.5 }}>
+        {categories.map((category) => (
+          <Button
+            key={category.id}
+            type="button"
+            onClick={() => onSelectCategory(category)}
+            sx={{
+              minHeight: 112,
+              p: 2,
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              textAlign: "left",
+              textTransform: "none",
+              border: "1px solid #E2E8F0",
+              borderRadius: 2,
+              color: "text.primary",
+              bgcolor: "#FFFFFF",
+              "&:hover": { bgcolor: "#F8FAFC", borderColor: "primary.main" },
+            }}
+          >
+            <Box sx={{ display: "flex", gap: 1.25, minWidth: 0 }}>
+              <FolderRounded color="primary" />
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="subtitle2" noWrap>{category.name}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {category.dashboards?.length ?? 0} tableros
+                </Typography>
+              </Box>
+            </Box>
+            <Typography variant="h6" color="text.secondary">
+              {category.dashboards?.length ?? 0}
+            </Typography>
+          </Button>
+        ))}
+      </Box>
+    );
+  }
+
   const rows = chunkRows(categories, DASHBOARD_INDEX_GRID_COLUMNS);
 
   return (
     <Box sx={{ mx: -0.5 }}>
+      <Button
+        type="button"
+        onClick={onBackToCategories}
+        startIcon={<ArrowBack />}
+        sx={{ mb: 1, textTransform: "none" }}
+      >
+        Volver a categorías
+      </Button>
       {rows.map((rowCategories, rowIndex) => {
         const slotCount = getRowSlotCount(rowCategories);
         const rowHasPagination = rowCategories.some((category) => category.dashboardPagination?.show);

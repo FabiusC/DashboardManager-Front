@@ -5,6 +5,11 @@ const DashboardIndexItem = ({ dashboard, isActive, onSelect, dense = false }) =>
   <Box
     component="button"
     type="button"
+    draggable
+    onDragStart={(event) => {
+      event.dataTransfer.setData("application/x-dashboard-id", String(dashboard.id));
+      event.dataTransfer.effectAllowed = "copy";
+    }}
     onClick={() => onSelect(dashboard.id)}
     sx={{
       display: "flex",

@@ -379,12 +379,13 @@ export const handleListAuthorizedDashboardsByCategory = async (userToken, catego
   return response.data;
 };
 
-export const handleListAuthorizedDashboardsGroupedByCategory = async (userToken) => {
+export const handleListAuthorizedDashboardsGroupedByCategory = async (userToken, search = "") => {
+  const trimmedSearch = typeof search === "string" ? search.trim() : "";
   const response = await generalRequest({
     version: "v1",
     typeRequest: "GET",
     nameUrl: "listAuthorizedDashboardsGroupedByCategory",
-    parameters: {},
+    parameters: trimmedSearch ? { q: trimmedSearch } : {},
     headers: userToken ? { Authorization: `Bearer ${userToken}` } : {},
   });
 

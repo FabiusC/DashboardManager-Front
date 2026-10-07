@@ -14,21 +14,22 @@ import { StyledButton } from "@components/Recursive/mui_styled_components";
 import RedirectingLoader from "@components/Recursive/Loaders/RedirectLoaders";
 import CreateDashboardCategoriesField from "./CreateDashboardCategoriesField";
 
-const CreateDashboardView = ({ 
-    isRedirecting, 
-    isLoadingData, 
-    dynamicFormState, 
-    formError, 
-    validationErrors,
-    formFields,
+const CreateDashboardView = ({
+    isRedirecting,
+    isLoadingData,
+    dynamicFormState,
+    formError,
+    validationErrors = {},
+    formFields = [],
     isLoadingDataSources,
     isErrorDataSources,
     isEmptyDataSources,
-    selectedCategories,
+    selectedCategories = [],
+    originDashboard,
     userToken,
-    handlers 
+    handlers = {}
 }) => {
-    
+
     if (isRedirecting) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
@@ -37,30 +38,30 @@ const CreateDashboardView = ({
         );
     }
 
-    // Mostrar mensaje cuando no hay fuentes disponibles - Sin formulario
+    // Show no data rources availables 
     if (!isLoadingDataSources && !isErrorDataSources && isEmptyDataSources) {
         return (
             <Box className="pad_35">
-                <Box sx={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    alignItems: 'center', 
+                <Box sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
                     justifyContent: 'center',
                     minHeight: '400px',
                     py: 6,
                     px: 4
                 }}>
-                    <Storage 
-                        sx={{ 
-                            fontSize: 80, 
+                    <Storage
+                        sx={{
+                            fontSize: 80,
                             color: 'text.secondary',
                             mb: 3,
                             opacity: 0.6
-                        }} 
+                        }}
                     />
-                    <Typography 
-                        variant="h5" 
-                        sx={{ 
+                    <Typography
+                        variant="h5"
+                        sx={{
                             fontWeight: 500,
                             mb: 2,
                             textAlign: 'center',
@@ -69,9 +70,9 @@ const CreateDashboardView = ({
                     >
                         No hay fuentes de datos disponibles
                     </Typography>
-                    <Typography 
-                        variant="body1" 
-                        sx={{ 
+                    <Typography
+                        variant="body1"
+                        sx={{
                             textAlign: 'center',
                             color: 'text.secondary',
                             maxWidth: '500px',
@@ -83,7 +84,7 @@ const CreateDashboardView = ({
                         <br />
                         Por favor, configure una fuente de datos.
                     </Typography>
-                    <StyledButton onMouseDown={handlers.onClose} variant="outlined">
+                    <StyledButton onClick={handlers?.onClose} variant="outlined">
                         Cerrar
                     </StyledButton>
                 </Box>
@@ -99,30 +100,30 @@ const CreateDashboardView = ({
             <Divider />
 
             {isLoadingData ? (
-                <LoadingAssembly state={{message: "Creando tablero...", borderRadius: false, boxShadow: false, size: 60}} />
+                <LoadingAssembly state={{ message: "Creando tablero...", borderRadius: false, boxShadow: false, size: 60 }} />
             ) : (
                 <Box>
                     <DialogContent sx={{ "& .MuiBox-root": { boxSizing: "border-box" } }}>
-                        {/* Mostrar error al cargar fuentes de datos */}
+                        {/* Show error when loading data sources */}
                         {isErrorDataSources && (
-                            <Box sx={{ 
-                                display: 'flex', 
-                                flexDirection: 'column', 
-                                alignItems: 'center', 
+                            <Box sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
                                 justifyContent: 'center',
                                 py: 4
                             }}>
-                                <Inbox 
-                                    sx={{ 
-                                        fontSize: 60, 
+                                <Inbox
+                                    sx={{
+                                        fontSize: 60,
                                         color: 'error.main',
                                         mb: 2,
                                         opacity: 0.7
-                                    }} 
+                                    }}
                                 />
-                                <Typography 
-                                    variant="h6" 
-                                    sx={{ 
+                                <Typography
+                                    variant="h6"
+                                    sx={{
                                         fontWeight: 500,
                                         mb: 1,
                                         textAlign: 'center',
@@ -131,9 +132,9 @@ const CreateDashboardView = ({
                                 >
                                     Error al cargar fuentes de datos
                                 </Typography>
-                                <Typography 
-                                    variant="body2" 
-                                    sx={{ 
+                                <Typography
+                                    variant="body2"
+                                    sx={{
                                         textAlign: 'center',
                                         color: 'text.secondary',
                                         maxWidth: '400px'
@@ -144,7 +145,7 @@ const CreateDashboardView = ({
                             </Box>
                         )}
 
-                        {/* Mostrar loading mientras cargan las fuentes */}
+                        {/* Show loading while getting data sources */}
                         {isLoadingDataSources && (
                             <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
                                 <LoadingAssembly state={{ message: "Cargando fuentes de datos...", borderRadius: false, boxShadow: false, size: 40 }} />
@@ -161,18 +162,26 @@ const CreateDashboardView = ({
 
                                 <CreateDashboardCategoriesField
                                     userToken={userToken}
-                                    value={selectedCategories}
-                                    onChange={handlers.handleCategoriesChange}
+                                    originDashboard={originDashboard}
+                                    value={Array.isArray(selectedCategories) ? selectedCategories : []}
+                                    onChange={handlers?.handleCategoriesChange || (() => {})}
                                 />
 
-                                {/* Renderizado de errores de validación */}
+                                {/* Validation error rendering */}
                                 {Object.keys(validationErrors).length > 0 && (
                                     <Box sx={{ mt: 2 }}>
-                                        {Object.entries(validationErrors).map(([fieldId, errorMessage]) => (
-                                            <Alert key={fieldId} severity="error" sx={{ mb: 1, "& .MuiAlert-message": { fontWeight: 500 } }}>
-                                                <strong>{formFields?.find(field => field.id === fieldId)?.title}:</strong> {errorMessage}
-                                            </Alert>
-                                        ))}
+                                        {Object.entries(validationErrors).map(([fieldId, errorMessage]) => {
+                                            // Solve field name or use a fallback
+                                            const fieldTitle =
+                                                formFields?.find((field) => field.id === fieldId)?.title ||
+                                                (fieldId === "categories" ? "Categorías" : fieldId);
+
+                                            return (
+                                                <Alert key={fieldId} severity="error" sx={{ mb: 1, "& .MuiAlert-message": { fontWeight: 500 } }}>
+                                                    <strong>{fieldTitle}:</strong> {errorMessage}
+                                                </Alert>
+                                            );
+                                        })}
                                     </Box>
                                 )}
                             </Box>
@@ -188,12 +197,12 @@ const CreateDashboardView = ({
                     )}
 
                     <DialogActions>
-                        <StyledButton onMouseDown={handlers.onClose} disabled={isLoadingData}>
+                        <StyledButton onClick={handlers?.onClose} disabled={isLoadingData}>
                             Cancelar
                         </StyledButton>
-                        <StyledButton 
-                            onClick={handlers.onSubmit} 
-                            variant="contained" 
+                        <StyledButton
+                            onClick={handlers?.onSubmit}
+                            variant="contained"
                             disabled={isLoadingData || isLoadingDataSources || isEmptyDataSources || isErrorDataSources}
                         >
                             {isLoadingData ? 'Creando...' : 'Crear tablero'}

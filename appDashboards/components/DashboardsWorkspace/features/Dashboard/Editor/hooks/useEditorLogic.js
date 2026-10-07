@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux"
 import { useEditorSaving } from "./useEditorSaving"
 import { useEditorGrid } from "./useEditorGrid"
 import { useEditorTabs } from "./useEditorTabs"
+import { assignDashboardCategoriesOnDrop } from "../utils/editorActions"
 
 export const useEditorLogic = ({
   dashboard,
@@ -15,10 +16,11 @@ export const useEditorLogic = ({
   id,
   previewElementRef,
   setPreviewCapturing,
+  selectDashboard,
 }) => {
   const dispatch = useDispatch()
 
-    // Create-panel modal state (not owned by the specialized hooks)
+  // Create-panel modal state (not owned by the specialized hooks)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   // Saving and unsaved-changes hook
@@ -50,8 +52,22 @@ export const useEditorLogic = ({
   const tabs = useEditorTabs({
     dashboard,
     setDashboard,
-    user
+    user,
+    selectDashboard,
   })
+  // Drop handler for dashboards clicked from the sidebar
+  const onDropDashboard = async (event) => {
+    const dashboardId = event.dataTransfer?.getData("application/x-dashboard-id") || event.dataTransfer?.getData("text/dashboard-id")
+    if (!dashboardId) return
+    event.preventDefault()
+    return assignDashboardCategoriesOnDrop({
+      draggedDashboardId: dashboardId,
+      targetDashboard: dashboard,
+      userToken: Array.isArray(user) ? user[0]?.userID : user?.userID,
+      dispatch,
+      setDashboard,
+    })
+  }
 
   return {
     // Side menu tabs
@@ -65,6 +81,7 @@ export const useEditorLogic = ({
 
     // Grid handlers
     onDropPanel: grid.onDropPanel,
+    onDropDashboard,
     onLayoutChange: grid.onLayoutChange,
     handleDeletePanel: grid.handleDeletePanel,
 

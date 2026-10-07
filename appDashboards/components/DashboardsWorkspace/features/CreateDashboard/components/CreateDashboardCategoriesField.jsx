@@ -21,7 +21,12 @@ import { Add as AddIcon, Close as CloseIcon } from "@mui/icons-material";
 import { createDashboardCategoriesMeta } from "../utils/formConfig";
 import { handleListDashboardCategories } from "../../Dashboard/shared/utils/dashboardActions";
 
-const CreateDashboardCategoriesField = ({ userToken, value = [], onChange }) => {
+const CreateDashboardCategoriesField = ({
+  userToken,
+  value = [],
+  onChange,
+  originDashboard,
+}) => {
   const theme = useTheme();
   const [draft, setDraft] = useState("");
   const [open, setOpen] = useState(false);
@@ -31,26 +36,63 @@ const CreateDashboardCategoriesField = ({ userToken, value = [], onChange }) => 
   const panelRef = useRef(null);
   const inputRef = useRef(null);
 
-  const { data: searchResults = [], isLoading } = useQuery({
+  // Grant the value to be an array of strings
+  const safeValue = useMemo(() => {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+      return value
+        .map((v) => (typeof v === "object" ? v.name || v.value || "" : v))
+        .filter(Boolean);
+    }
+    if (typeof value === "string") return [value];
+    return [];
+  }, [value]);
+
+  // Verify if the origin dashboard has categories to avoid unnecessary API calls
+  const hasOriginCategories = Boolean(
+    Array.isArray(originDashboard?.categories) && originDashboard.categories.length > 0
+  );
+
+  // Query the API if there are no categories from the origin dashboard
+  const { data: catalogCategories = [], isLoading } = useQuery({
     queryKey: ["createDashboardCategories", debouncedSearch],
     queryFn: () => handleListDashboardCategories(userToken, debouncedSearch),
-    enabled: !!userToken && open,
+    enabled: Boolean(userToken && open && !hasOriginCategories),
     placeholderData: (previousData) => previousData,
   });
 
-  const options = useMemo(
-    () =>
-      searchResults
-        .map((category) => ({ label: category.name, value: category.name }))
-        .filter((option) => !value.includes(option.value)),
-    [searchResults, value]
-  );
+  // Primary category source
+  const rawCategoriesSource = hasOriginCategories
+    ? originDashboard.categories
+    : catalogCategories;
+
+  // Options normalization
+  const options = useMemo(() => {
+    const list = Array.isArray(rawCategoriesSource)
+      ? rawCategoriesSource
+      : Array.isArray(rawCategoriesSource?.data)
+      ? rawCategoriesSource.data
+      : [];
+
+    return list
+      .map((cat) => {
+        const label = typeof cat === "string" ? cat : cat?.name || cat?.label || cat?.value || "";
+        return { label, value: label };
+      })
+      .filter((opt) => opt.value && !safeValue.includes(opt.value));
+  }, [rawCategoriesSource, safeValue]);
 
   const trimmedDraft = draft.trim();
-  const canAdd = trimmedDraft.length > 0 && !value.includes(trimmedDraft);
-  const emptyMessage = trimmedDraft
-    ? "Dale en agregar y la etiqueta se creará automáticamente."
-    : "Escribe una etiqueta y pulsa agregar para crearla.";
+  const canAdd = trimmedDraft.length > 0 && !safeValue.includes(trimmedDraft);
+
+  const emptyMessage = useMemo(() => {
+    if (originDashboard && !hasOriginCategories) {
+      return "El tablero origen no tiene categorías asignadas.";
+    }
+    return trimmedDraft
+      ? "Dale en agregar y la etiqueta se creará automáticamente."
+      : "Escribe una etiqueta y pulsa agregar para crearla.";
+  }, [originDashboard, hasOriginCategories, trimmedDraft]);
 
   const closePanel = useCallback(() => setOpen(false), []);
 
@@ -65,23 +107,51 @@ const CreateDashboardCategoriesField = ({ userToken, value = [], onChange }) => 
     [closePanel]
   );
 
-  const handleAdd = useCallback(() => {
-    if (!canAdd) return;
-    onChange([...value, trimmedDraft]);
-    closePanel();
-    setDraft("");
-    setSearchQuery("");
-  }, [canAdd, trimmedDraft, value, onChange, closePanel]);
+  const emitChange = useCallback(
+    (nextValue) => {
+      if (onChange) {
+        onChange(nextValue);
+      }
+    },
+    [onChange]
+  );
+
+  const handleAdd = useCallback(
+    (e) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      if (!canAdd) return;
+
+      const next = [...safeValue, trimmedDraft];
+      emitChange(next);
+      closePanel();
+      setDraft("");
+      setSearchQuery("");
+    },
+    [canAdd, trimmedDraft, safeValue, emitChange, closePanel]
+  );
 
   const handleSelectOption = useCallback(
     (optionValue) => {
-      if (value.includes(optionValue)) return;
-      setDraft(optionValue);
+      if (safeValue.includes(optionValue)) return;
+      const next = [...safeValue, optionValue];
+      emitChange(next);
       closePanel();
+      setDraft("");
       setSearchQuery("");
       inputRef.current?.blur();
     },
-    [value, closePanel]
+    [safeValue, emitChange, closePanel]
+  );
+
+  const handleDelete = useCallback(
+    (itemToDelete) => {
+      const next = safeValue.filter((item) => item !== itemToDelete);
+      emitChange(next);
+    },
+    [safeValue, emitChange]
   );
 
   return (
@@ -100,13 +170,13 @@ const CreateDashboardCategoriesField = ({ userToken, value = [], onChange }) => 
 
         <ClickAwayListener onClickAway={handleClickAway}>
           <Box sx={{ minWidth: 0 }}>
-            {value.length > 0 && (
+            {safeValue.length > 0 && (
               <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
-                {value.map((option) => (
+                {safeValue.map((option) => (
                   <Chip
                     key={option}
                     label={option}
-                    onDelete={() => onChange(value.filter((item) => item !== option))}
+                    onDelete={() => handleDelete(option)}
                     deleteIcon={<CloseIcon sx={{ fontSize: 14 }} />}
                     size="small"
                     color="primary"
@@ -131,10 +201,25 @@ const CreateDashboardCategoriesField = ({ userToken, value = [], onChange }) => 
                   setOpen(true);
                   setSearchQuery("");
                 }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    handleAdd(event);
+                  }
+                }}
                 aria-label={createDashboardCategoriesMeta.fieldTitle}
                 autoComplete="off"
               />
-              <IconButton onClick={handleAdd} disabled={!canAdd} color="primary" size="small" aria-label="Agregar etiqueta">
+              <IconButton
+                type="button"
+                onClick={handleAdd}
+                onMouseDown={(e) => e.preventDefault()}
+                disabled={!canAdd}
+                color="primary"
+                size="small"
+                aria-label="Agregar etiqueta"
+              >
                 <AddIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Box>

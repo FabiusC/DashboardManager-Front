@@ -8,7 +8,7 @@ import {
   fetchDashboardIndexGrouped,
 } from "../services/dashboardIndexService";
 
-const toCategories = (data, selectedTag) => {
+const toCategories = (data, selectedTag, selectedCategory) => {
   const items = [...(data?.categories ?? [])];
 
   if ((data?.uncategorized ?? []).length > 0) {
@@ -19,12 +19,16 @@ const toCategories = (data, selectedTag) => {
     });
   }
 
+  if (selectedCategory) {
+    return items.filter((category) => String(category.id) === String(selectedCategory.id));
+  }
+
   if (!selectedTag) return items;
 
   return items.filter((category) => String(category.id) === String(selectedTag.id));
 };
 
-export function useDashboardIndexGrouped(userToken, open, selectedTag = null) {
+export function useDashboardIndexGrouped(userToken, open, selectedTag = null, selectedCategory = null) {
   const [currentPage, setCurrentPage] = useState(1);
   const [dashboardPages, setDashboardPages] = useState({});
 
@@ -38,7 +42,7 @@ export function useDashboardIndexGrouped(userToken, open, selectedTag = null) {
   useEffect(() => {
     setCurrentPage(1);
     setDashboardPages({});
-  }, [selectedTag?.id]);
+  }, [selectedTag?.id, selectedCategory?.id]);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["dashboardIndexGrouped", userToken],
@@ -47,7 +51,10 @@ export function useDashboardIndexGrouped(userToken, open, selectedTag = null) {
     staleTime: 60_000,
   });
 
-  const categories = useMemo(() => toCategories(data, selectedTag), [data, selectedTag]);
+  const categories = useMemo(
+    () => toCategories(data, selectedTag, selectedCategory),
+    [data, selectedTag, selectedCategory],
+  );
 
   const categoryOptions = useMemo(
     () =>

@@ -11,6 +11,7 @@ import ScrollToTopButton from "./ScrollToTopButton";
 import ScheduleReportMUI from "@components/Scheduling/components/createReportModal";
 import { useDispatch } from "react-redux";
 import { resetReport } from "@components/Scheduling/components/store/scheduleSlice";
+import DashboardTabs from "../../DashboardTabs/components/DashboardTabs";
 
 export default function DashboardViewer({ dashboard, panels, layout, id }) {
   const [mounted, setMounted] = useState(false);
@@ -108,6 +109,7 @@ export default function DashboardViewer({ dashboard, panels, layout, id }) {
         flexDirection: "column",
         flexGrow: 1,
         height: "calc(100vh - 66px)",
+        pb: { xs: 7, sm: 7 },
       }}
     >
       <Paper
@@ -167,6 +169,7 @@ export default function DashboardViewer({ dashboard, panels, layout, id }) {
           />
         </Box>
       </Paper>
+      <DashboardTabs dashboard={dashboard} currentDashboardId={id || dashboard?.id} />
     </Box>
   );
 }

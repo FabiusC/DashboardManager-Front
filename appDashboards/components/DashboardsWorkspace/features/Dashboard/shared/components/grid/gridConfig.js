@@ -4,27 +4,31 @@ export const DEFAULT_MARGIN = 12;
 export const DEFAULT_MIN_W = 1;
 export const DEFAULT_MIN_H = 1;
 export const DRAG_IN_SELECTOR = ".dashboard-panel-drag";
-export const MOBILE_GRID_BREAKPOINT = 700;
 
 
 export const resolveColumns = (configuration) => {
     const cols = Number(configuration?.grid_columns)
     return cols > 0 ? cols : DEFAULT_GRID_COLUMNS
 }
+// ColumnOptions: "list" packs by (y,x) reading order — correct for 1-column mobile.
+const buildColumnOpts = (columns) => ({
+    layout: "list",
+    columnMax: columns,
+    breakpointForWindow: false,
+    breakpoints: [{ w: 700, c: 1 }],
+});
 const resolveMargin = (configuration) => {
     const mx = configuration?.grid_gap_x ?? DEFAULT_MARGIN;
     const my = configuration?.grid_gap_y ?? DEFAULT_MARGIN;
     return `${my}px ${mx}px`;
 };
 
-const isMobileViewport = () =>
-    typeof window !== "undefined" && window.innerWidth <= MOBILE_GRID_BREAKPOINT;
-
 //GridStackOptions -> Global configuration object that defines the layout, appearance, and behavior of the grid.
 export function buildGridOptions({configuration, isReadOnly = false, cellHeight} ={}){
     const columns = resolveColumns(configuration);
     return {
         column: columns, // Set de number of columns in the grid
+        columnOpts: buildColumnOpts(columns), // Control how widgets are repositioned when the grid column count changes
         cellHeight: cellHeight ?? DEFAULT_CELL_HEIGHT, // Update current cell height
         margin: resolveMargin(configuration), // Updates the margins which will set all 4 sides at once
         float: false, // Enable/disable floating widgets (default: false). When enabled, widgets can float up to fill empty spaces.
@@ -45,10 +49,29 @@ export function applyGridMargin(grid, configuration) {
 
 export function applyGridColumns(grid, configuration) {
     if (!grid) return;
-    const desktopColumns = resolveColumns(configuration);
-    const targetColumns = isMobileViewport() ? 1 : desktopColumns;
-    if (grid.getColumn() === targetColumns) return;
-    grid.column(targetColumns, targetColumns === 1 ? "list" : "moveScale");
+    const columns = resolveColumns(configuration);
+    const responsive = grid.opts?.columnOpts;
+
+    if (responsive?.breakpoints?.length) {
+        responsive.columnMax = columns;
+        const width = grid.el?.clientWidth;
+        if (!width) return;
+
+        let targetColumns = columns;
+        for (const breakpoint of responsive.breakpoints) {
+            if (width <= breakpoint.w) {
+                targetColumns = breakpoint.c || targetColumns;
+            }
+        }
+
+        if (grid.getColumn() !== targetColumns) {
+            const breakpoint = responsive.breakpoints.find((item) => item.c === targetColumns);
+            grid.column(targetColumns, breakpoint?.layout || responsive.layout || "moveScale");
+        }
+        return;
+    }
+
+    if (grid.getColumn() !== columns) grid.column(columns, "moveScale");
 }
 
 export function applyReadOnly(grid, isReadOnly) {

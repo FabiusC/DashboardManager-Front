@@ -2,8 +2,8 @@ import { Dialog } from '@mui/material';
 import { useCreateDashboard } from './hooks/useCreateDashboard';
 import CreateDashboardView from './components/CreateDashboardView';
 
-const CreateDashboard = ({ open, onClose, ...props }) => {
-    const logic = useCreateDashboard({ ...props, setIsCreateModal: onClose });
+const CreateDashboard = ({ open, onClose, originDashboard, initialCategories = [], ...props }) => {
+    const logic = useCreateDashboard({ ...props, open, originDashboard, initialCategories, setIsCreateModal: onClose });
 
     return (
         <Dialog 
@@ -16,7 +16,7 @@ const CreateDashboard = ({ open, onClose, ...props }) => {
                 }
             }}
         >
-            <CreateDashboardView 
+            <CreateDashboardView
                 isRedirecting={logic.states.isRedirecting}
                 isLoadingData={logic.states.isLoadingData}
                 dynamicFormState={logic.states.dynamicFormState}
@@ -27,6 +27,7 @@ const CreateDashboard = ({ open, onClose, ...props }) => {
                 isErrorDataSources={logic.states.isErrorDataSources}
                 isEmptyDataSources={logic.states.isEmptyDataSources}
                 selectedCategories={logic.states.selectedCategories}
+                originDashboard={originDashboard}
                 userToken={logic.states.userToken}
                 handlers={{
                     onDataChange: logic.actions.handleDataChange,
